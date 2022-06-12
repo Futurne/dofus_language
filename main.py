@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import os
 import sys
 
 from src.scrap.almanax_scrap import ScrapAlmanax
@@ -15,6 +16,10 @@ if __name__ == '__main__':
         print(f'Downloading data...')
         almanax = ScrapAlmanax()
         almanax.scrap()
+
+        if not os.path.isdir('data'):
+            os.makedirs('data')
         almanax.to_csv('data/data.csv')
+
         print(f'Done !')
         sys.exit(0)
