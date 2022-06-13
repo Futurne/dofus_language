@@ -9,8 +9,9 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 
 
-tokenizer = AutoTokenizer.from_pretrained('Cedille/fr-boris')
-tokenizer.add_special_tokens({'pad_token': '[PAD]'})
+# tokenizer = AutoTokenizer.from_pretrained('Cedille/fr-boris')
+# tokenizer.add_special_tokens({'pad_token': '[PAD]'})  # If using Cedille
+tokenizer = AutoTokenizer.from_pretrained('asi/gpt-fr-cased-small')
 
 
 class DofusDataset(Dataset):
@@ -50,8 +51,8 @@ class DofusDataset(Dataset):
 
     @staticmethod
     def generate_batch(batch_sentence: list[str]) -> torch.LongTensor:
-        ids = tokenizer(batch_sentence, padding=True)['input_ids']
-        return torch.LongTensor(ids)
+        ids = tokenizer(batch_sentence, padding=True, return_tensors='pt')
+        return ids['input_ids']
 
     @staticmethod
     def load_dataloaders(
@@ -80,7 +81,6 @@ class DofusDataset(Dataset):
         )
 
         return loader_train, loader_test
-
 
 
 if __name__ == '__main__':
