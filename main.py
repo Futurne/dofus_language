@@ -26,8 +26,8 @@ def prepare_training(config_path: str) -> DofusTrain:
 
 
 if __name__ == '__main__':
-    if len(sys.argv) != 2 or sys.argv[1] not in {'init', 'train'}:
-        print(f'Usage: {sys.argv[0]} [init/train]')
+    if len(sys.argv) < 2 or sys.argv[1] not in {'init', 'train'}:
+        print(f'Usage: python3 {sys.argv[0]} [init/train]')
         sys.exit(0)
 
     if sys.argv[1] == 'init':

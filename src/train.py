@@ -5,7 +5,7 @@ from collections import defaultdict
 
 import wandb
 import numpy as np
-from transformers import AutoModel
+from transformers import AutoModel, pipeline
 
 import torch
 import torch.nn as nn
@@ -15,6 +15,7 @@ from torchinfo import summary
 
 from src.dataset import DofusDataset
 from src.model import DofusTransformer
+from src.beam_search import BeamSearch
 
 
 class DofusTrain:
@@ -41,6 +42,8 @@ class DofusTrain:
             self.model.parameters(),
             lr=self.lr
         )
+
+        self.generator = BeamSearch(dataset.tokenizer)
 
     def summary(self):
         n_ticks = 30
@@ -84,6 +87,10 @@ class DofusTrain:
 
         for name, values in metrics.items():
             metrics[name] = np.mean(values)
+
+        sentences = self.generator.search(self.model, "Aujourd'hui", 3, 10, 100, self.device)
+        metrics['Generated sample'] = sentences[0][0]
+
         return metrics
 
     def eval_and_log(self):

@@ -28,7 +28,7 @@ class DofusDataset(Dataset):
         return len(self.corpus)
 
     def __getitem__(self, index: int) -> str:
-        return self.corpus[index] + self.tokenizer.eos_token
+        return self.tokenizer.bos_token + self.corpus[index] + self.tokenizer.eos_token
 
     def generate_batch(self, batch_sentence: list[str]) -> torch.LongTensor:
         ids = self.tokenizer(batch_sentence, padding=True, return_tensors='pt')
@@ -40,13 +40,11 @@ class DofusDataset(Dataset):
 
     @property
     def eos_token(self):
-        token_id = self.tokenizer(self.tokenizer.eos_token)
-        return token_id['input_ids'][0]
+        return self.tokenizer.eos_token_id
 
     @property
     def pad_token(self):
-        token_id = self.tokenizer(self.tokenizer.pad_token)
-        return token_id['input_ids'][0]
+        return self.tokenizer.pad_token_id
 
     @staticmethod
     def load_corpus(filename: str) -> list[str]:

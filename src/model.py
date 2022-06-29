@@ -28,6 +28,8 @@ class DofusTransformer(nn.Module):
         for params in self.pretrained_model.parameters():
             params.requires_grad = False
 
+        self.config = self.pretrained_model.config
+
         with torch.no_grad():
             x = torch.zeros((1, 10), dtype=torch.long)
             x = self.pretrained_model(x)['last_hidden_state']
