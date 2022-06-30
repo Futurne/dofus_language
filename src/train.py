@@ -4,8 +4,10 @@
 from collections import defaultdict
 
 import wandb
+import einops
 import numpy as np
 from transformers import AutoModel, pipeline
+from tqdm import tqdm
 
 import torch
 import torch.nn as nn
@@ -27,15 +29,20 @@ class DofusTrain:
             frac_test=0.2,
             seed=self.seed,
             model_name=self.model_name,
+            filename=self.dataset_path,
         )
         dataset = self.train_loader.dataset
-        self.loss_fn = nn.CrossEntropyLoss(ignore_index=dataset.pad_token)
         self.vocabulary_size = dataset.vocabulary_size
+        self.pad_token = dataset.pad_token
+        self.loss_fn = nn.CrossEntropyLoss(ignore_index=self.pad_token)
 
         self.model = DofusTransformer(
             self.model_name,
             self.vocabulary_size,
             dataset.pad_token,
+            self.n_layers,
+            self.hidden_size,
+            self.dropout,
         )
 
         self.optimizer = optim.Adam(
@@ -72,6 +79,15 @@ class DofusTrain:
         y = y.reshape(-1)
         metrics['loss'] = self.loss_fn(y_pred, y)
 
+        probs_predicted = torch.softmax(y_pred, dim=1)
+        for k in [1, 3, 10]:
+            metrics[f'top-{k} accuracy'] = DofusTrain.topk_accuracy(
+                y,
+                probs_predicted,
+                k,
+                self.pad_token
+            )
+
         return metrics
 
     def eval(self, loader: DataLoader) -> dict:
@@ -87,9 +103,6 @@ class DofusTrain:
 
         for name, values in metrics.items():
             metrics[name] = np.mean(values)
-
-        sentences = self.generator.search(self.model, "Aujourd'hui", 3, 10, 100, self.device)
-        metrics['Generated sample'] = sentences[0][0]
 
         return metrics
 
@@ -109,6 +122,7 @@ class DofusTrain:
     def start(self):
         optim = self.optimizer
         self.model.to(self.device)
+        log_table = wandb.Table(columns=['epoch', 'sample'])
 
         with wandb.init(
             project='Dofus Pretrained Transformer',
@@ -119,10 +133,10 @@ class DofusTrain:
             # Evaluate the perfs first
             self.eval_and_log()
 
-            for e in range(self.n_epochs):
+            for e in tqdm(range(self.n_epochs)):
                 self.model.train()
 
-                for batch in self.train_loader:
+                for batch in tqdm(self.train_loader):
                     optim.zero_grad()
                     batch = batch.to(self.device)
 
@@ -132,3 +146,40 @@ class DofusTrain:
                     optim.step()
 
                 self.eval_and_log()
+
+                sentences = self.generator.search(self.model, "Aujourd'hui", 3, 10, 100, self.device)
+                log_table.add_data(e+1, sentences[0][0])
+
+            wandb.log({'Samples': log_table})
+
+    @staticmethod
+    def topk_accuracy(
+        real_tokens: torch.FloatTensor,
+        probs_tokens: torch.FloatTensor,
+        k: int,
+        pad_token: int,
+    ) -> torch.FloatTensor:
+        """Compute the top-k accuracy.
+        We ignore the PAD tokens.
+
+        Args
+        ----
+            real_tokens: Real tokens of the target sentence.
+                Shape of [batch_size * n_tokens].
+            probs_tokens: Tokens probability predicted by the model.
+                Shape of [batch_size * n_tokens, n_target_vocabulary].
+            k: Top-k accuracy threshold.
+            pad_token: Padding token value.
+        
+        Output
+        ------
+            acc: Scalar top-k accuracy value.
+        """
+        total = (real_tokens != pad_token).sum()
+
+        _, pred_tokens = probs_tokens.topk(k=k, dim=-1)  # [batch_size * n_tokens, k]
+        real_tokens = einops.repeat(real_tokens, 'b -> b k', k=k)  # [batch_size * n_tokens, k]
+
+        good = (pred_tokens == real_tokens) & (real_tokens != pad_token)
+        acc = good.sum() / total
+        return acc

@@ -14,7 +14,8 @@ from src.train import DofusTrain
 def prepare_training(config_path: str) -> DofusTrain:
     # Default values, can be overwritten in the yaml file
     config = {
-        'device': 'cuda' if torch.cuda.is_available() else 'cpu'
+        'device': 'cuda' if torch.cuda.is_available() else 'cpu',
+        'dataset_path': 'data/data.csv'
     }
 
     with open(config_path) as config_file:

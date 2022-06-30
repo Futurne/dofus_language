@@ -48,11 +48,17 @@ class DofusDataset(Dataset):
 
     @staticmethod
     def load_corpus(filename: str) -> list[str]:
+        if filename.endswith('french_books_reviews.csv'):
+            columns = ['reader_review']
+        elif filename.endswith('data.csv'):
+            columns = ['boss_desc', 'rubrikabrax', 'meryde']
+
         df = pd.read_csv(filename)
         corpus = []
-        for col_name in ['boss_desc', 'rubrikabrax', 'meryde']:
+        for col_name in columns:
             values = df[col_name].values
-            corpus.extend(values)
+            na = df[col_name].isna()
+            corpus.extend(values[~na])
         return corpus
 
     @staticmethod
@@ -101,7 +107,3 @@ class DofusDataset(Dataset):
 
         return loader_train, loader_test
 
-
-if __name__ == '__main__':
-    data_train, data_test = DofusDataset.load_dataloaders(64, filename='./data/data.csv')
-    print(next(iter(data_train)).shape)

@@ -15,13 +15,15 @@ class DofusTransformer(nn.Module):
         model_name: str,
         vocabulary_size: int,
         pad_token: int,
+        n_layers: int,
+        hidden_size: int,
+        dropout: float,
     ):
         super().__init__()
         self.pad_token = pad_token
 
-        if model_name not in accepted_models:
-            raise RuntimeError(f"Unknown model name: '{model_name}', " +
-                               "accepted models: {' '.join(accepted_models)}")
+        assert model_name in accepted_models, f"Accepted models: {' '.join(accepted_models)}"
+        assert n_layers >= 1
 
         self.pretrained_model = AutoModel.from_pretrained(model_name)
         self.pretrained_model.requires_grad = False
@@ -33,14 +35,26 @@ class DofusTransformer(nn.Module):
         with torch.no_grad():
             x = torch.zeros((1, 10), dtype=torch.long)
             x = self.pretrained_model(x)['last_hidden_state']
-            hidden_size = x.shape[-1]
+            output_hidden_size = x.shape[-1]
 
-        self.head = nn.Sequential(
-            nn.Linear(hidden_size, hidden_size // 2),
-            nn.LayerNorm(hidden_size // 2),
-            nn.ReLU(),
-            nn.Linear(hidden_size // 2, vocabulary_size)
+        self.project_hidden = nn.Sequential(
+            nn.Dropout(dropout),
+            nn.Linear(output_hidden_size, hidden_size),
+            nn.LayerNorm(hidden_size),
+            nn.LeakyReLU(),
         )
+
+        self.hidden_layers = nn.ModuleList([
+            nn.Sequential(
+                nn.Dropout(dropout),
+                nn.Linear(hidden_size, hidden_size),
+                nn.LayerNorm(hidden_size),
+                nn.LeakyReLU(),
+            )
+            for _ in range(n_layers - 1)
+        ])
+        
+        self.head = nn.Linear(hidden_size, vocabulary_size)
 
     def forward(self, x: torch.LongTensor) -> torch.FloatTensor:
         """Predict the next token autoregressively.
@@ -58,6 +72,10 @@ class DofusTransformer(nn.Module):
         mask = x != self.pad_token
         x = self.pretrained_model(x, attention_mask=mask)
         x = x.last_hidden_state
+
+        x = self.project_hidden(x)
+        for layer in self.hidden_layers:
+            x = layer(x) + x
         y = self.head(x)
         return y
 
