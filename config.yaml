@@ -1,17 +1,13 @@
 group_wb: Test
 
 # Training config
-n_epochs: 5
+n_epochs: 20
 batch_size: 16
-lr: 1.0e-3
-
-# Model config
-n_layers: 3
-hidden_size: 100
-dropout: 0.3
+lr: 1.0e-5
+reg_weight: 1.0e-2
 
 # General config
 model_name: asi/gpt-fr-cased-small
-dataset_path: data/french_books_reviews.csv
+dataset_path: data/data.csv
 device: cuda
 seed: 0

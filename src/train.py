@@ -6,8 +6,8 @@ from collections import defaultdict
 import wandb
 import einops
 import numpy as np
-from transformers import AutoModel, pipeline
 from tqdm import tqdm
+from transformers import GPT2LMHeadModel
 
 import torch
 import torch.nn as nn
@@ -16,7 +16,7 @@ from torch.utils.data import DataLoader
 from torchinfo import summary
 
 from src.dataset import DofusDataset
-from src.model import DofusTransformer
+from src.model import load_model, generate
 from src.beam_search import BeamSearch
 
 
@@ -32,22 +32,17 @@ class DofusTrain:
             filename=self.dataset_path,
         )
         dataset = self.train_loader.dataset
+        self.tokenizer = dataset.tokenizer
         self.vocabulary_size = dataset.vocabulary_size
         self.pad_token = dataset.pad_token
         self.loss_fn = nn.CrossEntropyLoss(ignore_index=self.pad_token)
 
-        self.model = DofusTransformer(
-            self.model_name,
-            self.vocabulary_size,
-            dataset.pad_token,
-            self.n_layers,
-            self.hidden_size,
-            self.dropout,
-        )
+        self.model = load_model(self.model_name)
 
         self.optimizer = optim.Adam(
             self.model.parameters(),
-            lr=self.lr
+            lr=self.lr,
+            weight_decay=self.reg_weight,
         )
 
         self.generator = BeamSearch(dataset.tokenizer)
@@ -58,6 +53,23 @@ class DofusTrain:
         summary(
             self.model,
         )
+
+        # Datasets summary
+        print(f'Training dataset length: {len(self.train_loader.dataset)}')
+        print(f'Evaluation dataset length: {len(self.test_loader.dataset)}')
+
+        # General parameters summary
+        general_params = [
+            'n_epochs',
+            'batch_size',
+            'lr',
+            'reg_weight',
+            'group_wb',
+            'device',
+        ]
+        for p in general_params:
+            p_exp = f'[{p}]'
+            print(f'     {p_exp:<20}-\t\t{self.__dict__[p]}')
 
     def do_batch(self, batch: torch.LongTensor) -> dict[str, torch.FloatTensor]:
         """Do one batch forwarding and compute the loss.
@@ -75,7 +87,7 @@ class DofusTrain:
         """
         metrics = dict()
         x, y = batch[:, :-1], batch[:, 1:]
-        y_pred = self.model(x).view(-1, self.vocabulary_size)
+        y_pred = self.model(x)['logits'].view(-1, self.vocabulary_size)
         y = y.reshape(-1)
         metrics['loss'] = self.loss_fn(y_pred, y)
 
@@ -147,8 +159,8 @@ class DofusTrain:
 
                 self.eval_and_log()
 
-                sentences = self.generator.search(self.model, "Aujourd'hui", 3, 10, 100, self.device)
-                log_table.add_data(e+1, sentences[0][0])
+                sentences = generate(self.model, self.tokenizer, "Aujourd'hui", self.device)
+                log_table.add_data(e+1, sentences[0])
 
             wandb.log({'Samples': log_table})
 

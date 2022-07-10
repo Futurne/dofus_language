@@ -3,6 +3,5 @@
 
 
 accepted_models = {
-    'Cedille/fr-boris',
     'asi/gpt-fr-cased-small',
 }

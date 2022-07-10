@@ -45,6 +45,11 @@ if __name__ == '__main__':
 
     if sys.argv[1] == 'train':
         train = prepare_training(sys.argv[2])
+
         train.summary()
+        print('\nContinue?')
+        if input('[y/n] > ') != 'y':
+            sys.exit(0)
+
         train.start()
 

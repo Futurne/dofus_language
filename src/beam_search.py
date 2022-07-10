@@ -145,7 +145,7 @@ class BeamSearch:
                 batch_size, n_tokens = tokens.shape
 
                 # Get next beams
-                predicted = model.forward(tokens)
+                predicted = model(tokens)
                 probs = torch.softmax(predicted, dim=-1)  # [batch_size, n_tokens, vocabulary_size]
                 probs = probs[:, -1]  # Take the predicted probabilities for the next token only
                 predicted, probs = BeamSearch.sample_from_probs(probs, width)

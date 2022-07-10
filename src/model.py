@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from transformers import AutoModel
+from transformers import GPT2LMHeadModel, GPT2Tokenizer
 
 import torch
 import torch.nn as nn
@@ -9,73 +9,30 @@ import torch.nn as nn
 from src.environment import accepted_models
 
 
-class DofusTransformer(nn.Module):
-    def __init__(
-        self,
-        model_name: str,
-        vocabulary_size: int,
-        pad_token: int,
-        n_layers: int,
-        hidden_size: int,
-        dropout: float,
-    ):
-        super().__init__()
-        self.pad_token = pad_token
+def load_model(model_name: str) -> GPT2LMHeadModel:
+    """Load the model and freeze every layers except the head.
+    """
+    assert model_name in accepted_models, f"Unknown model, please select one from {' '.join(accepted_models)}"
+    model = GPT2LMHeadModel.from_pretrained(model_name)
+    model.requires_grad_(False)
+    model.lm_head.requires_grad_(True)
+    return model
 
-        assert model_name in accepted_models, f"Accepted models: {' '.join(accepted_models)}"
-        assert n_layers >= 1
+def generate(model: GPT2LMHeadModel, tokenizer: GPT2Tokenizer, beggining: str, device: str) -> list[str]:
+    input_ids = tokenizer.encode(beggining, return_tensors='pt')
+    input_ids = input_ids.to(device)
 
-        self.pretrained_model = AutoModel.from_pretrained(model_name)
-        self.pretrained_model.requires_grad = False
-        for params in self.pretrained_model.parameters():
-            params.requires_grad = False
+    model.eval()
+    model.to(device)
 
-        self.config = self.pretrained_model.config
-
-        with torch.no_grad():
-            x = torch.zeros((1, 10), dtype=torch.long)
-            x = self.pretrained_model(x)['last_hidden_state']
-            output_hidden_size = x.shape[-1]
-
-        self.project_hidden = nn.Sequential(
-            nn.Dropout(dropout),
-            nn.Linear(output_hidden_size, hidden_size),
-            nn.LayerNorm(hidden_size),
-            nn.LeakyReLU(),
-        )
-
-        self.hidden_layers = nn.ModuleList([
-            nn.Sequential(
-                nn.Dropout(dropout),
-                nn.Linear(hidden_size, hidden_size),
-                nn.LayerNorm(hidden_size),
-                nn.LeakyReLU(),
-            )
-            for _ in range(n_layers - 1)
-        ])
-        
-        self.head = nn.Linear(hidden_size, vocabulary_size)
-
-    def forward(self, x: torch.LongTensor) -> torch.FloatTensor:
-        """Predict the next token autoregressively.
-
-        Input
-        -----
-            x: Batch of sentences.
-                Shape of [batch_size, sentence_len].
-
-        Output
-        ------
-            y: Next tokens predicted (for each token in a sentence).
-                Shape of [batch_size, sentence_len, vocabulary_size].
-        """
-        mask = x != self.pad_token
-        x = self.pretrained_model(x, attention_mask=mask)
-        x = x.last_hidden_state
-
-        x = self.project_hidden(x)
-        for layer in self.hidden_layers:
-            x = layer(x) + x
-        y = self.head(x)
-        return y
+    beam_outputs = model.generate(
+        input_ids,
+        max_length=100,
+        do_sample=True,
+        top_k=50,
+        top_p=0.95,
+        num_return_sequences=10
+    )
+    beam_outputs = tokenizer.batch_decode(beam_outputs, skip_special_tokens=True)
+    return beam_outputs
 

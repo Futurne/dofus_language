@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import pandas as pd
-from transformers import AutoTokenizer
+from transformers import GPT2Tokenizer
 from sklearn.model_selection import train_test_split
 
 import torch
@@ -10,9 +10,8 @@ from torch.utils.data import Dataset, DataLoader
 
 from src.environment import accepted_models
 
-no_padd_tokenizers = {
-    'Cedille/fr-boris'
-}
+# Set of tokenizers having no padding tokens
+no_padd_tokenizers = set()
 
 
 class DofusDataset(Dataset):
@@ -20,7 +19,7 @@ class DofusDataset(Dataset):
         super().__init__()
         self.corpus = corpus
 
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
+        self.tokenizer = GPT2Tokenizer.from_pretrained(model_name)
         if model_name in no_padd_tokenizers:
             self.tokenizer.add_special_tokens({'pad_token': '[PAD]'})
 
@@ -48,10 +47,7 @@ class DofusDataset(Dataset):
 
     @staticmethod
     def load_corpus(filename: str) -> list[str]:
-        if filename.endswith('french_books_reviews.csv'):
-            columns = ['reader_review']
-        elif filename.endswith('data.csv'):
-            columns = ['boss_desc', 'rubrikabrax', 'meryde']
+        columns = ['boss_desc', 'rubrikabrax', 'meryde']
 
         df = pd.read_csv(filename)
         corpus = []
