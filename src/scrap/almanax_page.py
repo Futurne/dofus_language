@@ -42,3 +42,4 @@ if __name__ == '__main__':
     print('Boss:\n', page.boss_desc())
     print('\nRubrikabrax:\n', page.rubrikabrax())
     print('\nMeryde:\n', page.meryde())
+
