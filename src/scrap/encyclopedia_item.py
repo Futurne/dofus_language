@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+"""Collect data from one item page using a selenium session.
+"""
 
 import pandas as pd
 from selenium import webdriver
@@ -8,9 +9,16 @@ from selenium.webdriver.common.by import By
 
 
 class EncyclopediaItem:
+    """Collect all data from an item page.
+    """
     def __init__(self, driver: webdriver.Firefox, item_url: str):
         self.driver = driver
         self.item_url = item_url
+        self.item_name = None
+        self.illustration_url = None
+        self.item_type = None
+        self.item_level = None
+        self.item_description = None
 
     def scrap_name(self):
         element = self.driver.find_element(By.CLASS_NAME, 'ak-title-container')
@@ -39,6 +47,8 @@ class EncyclopediaItem:
         self.item_description = element.text
 
     def scrap(self):
+        """Scrap the item page and collect all data.
+        """
         self.driver.get(self.item_url)
 
         self.scrap_name()
@@ -48,6 +58,9 @@ class EncyclopediaItem:
         self.scrap_description()
 
     def add_to_df(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Add to the current dataframe the data of this item.
+        Return the new dataframe.
+        """
         item_df = pd.DataFrame({
             'url': [self.item_url],
             'name': [self.item_name],

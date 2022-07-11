@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+"""Scrap all data from a one-year calendar of the Dofus almanax: https://www.krosmoz.com/fr/almanax.
+"""
 
 import datetime
 
@@ -41,8 +42,3 @@ class ScrapAlmanax:
         df = pd.DataFrame(self.data)
         df.to_csv(filename, index=False)
 
-
-if __name__ == '__main__':
-    almanax = ScrapAlmanax()
-    almanax.scrap()
-    almanax.to_csv('data.csv')

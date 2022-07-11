@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+"""Download data from the encyclopedia website: https://www.dofus.com/fr/mmorpg/encyclopedie.
+Uses selenium to keep a human-like session.
+"""
 
 import time
 
@@ -23,12 +25,18 @@ BASENAME_URLS = {
     'apparats': 'https://www.dofus.com/fr/mmorpg/encyclopedie/objets-d-apparat',
     'compagnons': 'https://www.dofus.com/fr/mmorpg/encyclopedie/compagnons',
     'idoles': 'https://www.dofus.com/fr/mmorpg/encyclopedie/idoles',
-}
+    'harnachements': 'https://www.dofus.com/fr/mmorpg/encyclopedie/harnachements',
+}  # category_name -> category_url
 
 TIMEOUT = 3
 
 
 class EncyclopediaScrap:
+    """To download every items from a specific category.
+    The valid categories can be found in the 'BASENAME_URLS' dictionnary.
+
+    Before downloading the items, the session needs to be initialized by the 'start' method.
+    """
     def __init__(self):
         self.driver = webdriver.Firefox()
 
@@ -50,8 +58,9 @@ class EncyclopediaScrap:
 
         raise RuntimeError('Cookies panel has been found but no there is no accept button.')
 
-    def start(self, url: str):
+    def start(self, url: str='https://www.dofus.com/fr'):
         """Load a page and check for cookies.
+        The page in itself is not important, as long as it is a Dofus.com page.
         """
         self.driver.get(url)
         self.check_for_cookies_panel()
@@ -82,6 +91,8 @@ class EncyclopediaScrap:
         return max(pages)
 
     def category_name(self, category_url: str) -> str:
+        """Return the proper name of the category.
+        """
         self.driver.get(category_url)
         element = self.driver.find_element(By.CLASS_NAME, 'ak-title-container')
         element = element.find_element(By.TAG_NAME, 'h1')
@@ -90,6 +101,8 @@ class EncyclopediaScrap:
         return name.strip()
 
     def check_404(self, url: str) -> bool:
+        """Is the page a 404 error page?
+        """
         self.driver.get(url)
         try:
             self.driver.find_element(By.CLASS_NAME, 'ak-404')
@@ -100,6 +113,12 @@ class EncyclopediaScrap:
         raise RuntimeError
 
     def scrap_category(self, category_url: str):
+        """Get all items in the category.
+        This is a *long* process. There is timeout between each item to
+        avoid the 'are you a human?' question.
+
+        Save them into a csv file in the 'data' directory.
+        """
         max_page_number = self.total_pages(category_url)
         category_name = self.category_name(category_url).lower()
 

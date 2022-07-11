@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+"""Collect data from an almanax page.
+"""
 
 import requests
 from bs4 import BeautifulSoup
@@ -33,13 +34,4 @@ class AlmanaxPage:
         desc = desc.find('p')  # Find the first 'p' balise
         desc = desc.text
         return desc
-
-
-if __name__ == '__main__':
-    URL = 'https://www.krosmoz.com/fr/almanax/2022-04-06'
-    page = AlmanaxPage(URL)
-    print(f'Page {URL}')
-    print('Boss:\n', page.boss_desc())
-    print('\nRubrikabrax:\n', page.rubrikabrax())
-    print('\nMeryde:\n', page.meryde())
 
