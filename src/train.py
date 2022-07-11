@@ -60,6 +60,7 @@ class DofusTrain:
 
         # General parameters summary
         general_params = [
+            'beggining_sample',
             'n_epochs',
             'batch_size',
             'lr',
@@ -159,7 +160,7 @@ class DofusTrain:
 
                 self.eval_and_log()
 
-                sentences = generate(self.model, self.tokenizer, "Aujourd'hui", self.device)
+                sentences = generate(self.model, self.tokenizer, self.beggining_sample, self.device)
                 log_table.add_data(e+1, sentences[0])
 
             wandb.log({'Samples': log_table})
