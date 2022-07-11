@@ -4,8 +4,11 @@
 Uses selenium to keep a human-like session.
 """
 
+import os
 import time
+from collections import defaultdict
 
+import yaml
 import pandas as pd
 from tqdm import tqdm
 from selenium import webdriver
@@ -116,24 +119,36 @@ class EncyclopediaScrap:
         """Get all items in the category.
         This is a *long* process. There is timeout between each item to
         avoid the 'are you a human?' question.
+        Take the 
 
         Save them into a csv file in the 'data' directory.
         """
         max_page_number = self.total_pages(category_url)
         category_name = self.category_name(category_url).lower()
+        filepath = f'data/{category_name}.csv'
 
-        df = pd.DataFrame(
-            columns=[
-                'url',
-                'name',
-                'description',
-                'type',
-                'level',
-                'illustration_url',
-            ]
-        )
+        # Load the existing df if possible
+        if os.path.exists(filepath):
+            df = pd.read_csv(filepath)
+        else:
+            df = pd.DataFrame(
+                columns=[
+                    'url',
+                    'name',
+                    'description',
+                    'type',
+                    'level',
+                    'illustration_url',
+                ]
+            )
 
-        for page_number in tqdm(range(1, max_page_number + 1)):
+        # Load the existing encyclopedia state if possible
+        state = defaultdict(int)
+        if os.path.exists('data/encyclopedia_state.yaml'):
+            with open('data/encyclopedia_state.yaml') as state_file:
+                state |= yaml.safe_load(state_file)  # Get the dictionnary and make it a defaultdict (thanks to the |= operator)
+
+        for page_number in tqdm(range(state[category_name] + 1, max_page_number + 1)):
             url = EncyclopediaScrap.get_page_number(category_url, page_number)
             items = self.list_items(url)
             for item_url in tqdm(items):
@@ -145,7 +160,14 @@ class EncyclopediaScrap:
                 scrap_item.scrap()
 
                 df = scrap_item.add_to_df(df)
-                df.to_csv(f'data/{category_name}.csv', index=False)
+
+            # Save the df at the end of the page
+            df.to_csv(f'data/{category_name}.csv', index=False)
+
+            # Update the encyclopedia state
+            state[category_name] += 1
+            with open('data/encyclopedia_state.yaml', 'w') as state_file:
+                yaml.dump(dict(state), state_file)
 
     @staticmethod
     def get_page_number(basename_url: str, number: int) -> str:
