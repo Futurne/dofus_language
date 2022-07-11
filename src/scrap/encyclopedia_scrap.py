@@ -13,17 +13,17 @@ from selenium.common.exceptions import NoSuchElementException
 from src.scrap.encyclopedia_item import EncyclopediaItem
 
 
-BASENAME_URLS = [
-    'https://www.dofus.com/fr/mmorpg/encyclopedie/ressources',
-    'https://www.dofus.com/fr/mmorpg/encyclopedie/armes',
-    'https://www.dofus.com/fr/mmorpg/encyclopedie/equipements',
-    'https://www.dofus.com/fr/mmorpg/encyclopedie/familiers',
-    'https://www.dofus.com/fr/mmorpg/encyclopedie/montures',
-    'https://www.dofus.com/fr/mmorpg/encyclopedie/consommables',
-    'https://www.dofus.com/fr/mmorpg/encyclopedie/objets-d-apparat',
-    'https://www.dofus.com/fr/mmorpg/encyclopedie/compagnons',
-    'https://www.dofus.com/fr/mmorpg/encyclopedie/idoles',
-]
+BASENAME_URLS = {
+    'ressources': 'https://www.dofus.com/fr/mmorpg/encyclopedie/ressources',
+    'armes': 'https://www.dofus.com/fr/mmorpg/encyclopedie/armes',
+    'equipements': 'https://www.dofus.com/fr/mmorpg/encyclopedie/equipements',
+    'familiers': 'https://www.dofus.com/fr/mmorpg/encyclopedie/familiers',
+    'montures': 'https://www.dofus.com/fr/mmorpg/encyclopedie/montures',
+    'consommables': 'https://www.dofus.com/fr/mmorpg/encyclopedie/consommables',
+    'apparats': 'https://www.dofus.com/fr/mmorpg/encyclopedie/objets-d-apparat',
+    'compagnons': 'https://www.dofus.com/fr/mmorpg/encyclopedie/compagnons',
+    'idoles': 'https://www.dofus.com/fr/mmorpg/encyclopedie/idoles',
+}
 
 TIMEOUT = 3
 

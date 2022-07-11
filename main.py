@@ -4,6 +4,7 @@
 import os
 import sys
 import yaml
+import argparse
 
 import torch
 
@@ -27,29 +28,16 @@ def prepare_training(config_path: str) -> DofusTrain:
 
 
 if __name__ == '__main__':
-    if len(sys.argv) < 2 or sys.argv[1] not in {'init', 'train'}:
-        print(f'Usage: python3 {sys.argv[0]} [init/train]')
+    parser = argparse.ArgumentParser(description='Train a pretrained model to speak the Dofus language')
+    parser.add_argument('config_file', help='Configuration file (YAML file)')
+
+    args = parser.parse_args()
+
+    train = prepare_training(args.config_file)
+    train.summary()
+    print('\nContinue?')
+    if input('[y/n] > ') != 'y':
         sys.exit(0)
 
-    if sys.argv[1] == 'init':
-        print(f'Downloading data...')
-        almanax = ScrapAlmanax()
-        almanax.scrap()
-
-        if not os.path.isdir('data'):
-            os.makedirs('data')
-        almanax.to_csv('data/data.csv')
-
-        print(f'Done !')
-        sys.exit(0)
-
-    if sys.argv[1] == 'train':
-        train = prepare_training(sys.argv[2])
-
-        train.summary()
-        print('\nContinue?')
-        if input('[y/n] > ') != 'y':
-            sys.exit(0)
-
-        train.start()
+    train.start()
 
