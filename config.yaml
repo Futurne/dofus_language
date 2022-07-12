@@ -9,6 +9,6 @@ reg_weight: 1.0e-2
 
 # General config
 model_name: asi/gpt-fr-cased-small
-dataset_path: data/data.csv
+dataset_path: data/big_file.txt
 device: cuda
 seed: 0

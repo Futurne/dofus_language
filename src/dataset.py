@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import pandas as pd
 from transformers import GPT2Tokenizer
 from sklearn.model_selection import train_test_split
 
@@ -47,14 +46,12 @@ class DofusDataset(Dataset):
 
     @staticmethod
     def load_corpus(filename: str) -> list[str]:
-        columns = ['boss_desc', 'rubrikabrax', 'meryde']
-
-        df = pd.read_csv(filename)
-        corpus = []
-        for col_name in columns:
-            values = df[col_name].values
-            na = df[col_name].isna()
-            corpus.extend(values[~na])
+        with open(filename) as corpus_file:
+            corpus = corpus_file.readlines()
+        corpus = [
+            sample.replace('\n', '')  # Remove pending '\n'
+            for sample in corpus
+        ]
         return corpus
 
     @staticmethod
@@ -78,7 +75,7 @@ class DofusDataset(Dataset):
         batch_size: int,
         frac_test: float=0.2,
         seed: int=0,
-        filename: str='data/data.csv',
+        filename: str='data/big_file.txt',
         model_name: str='asi/gpt-fr-cased-small',
     ) -> tuple[DataLoader]:
         dataset_train, dataset_test = DofusDataset.load_datasets(
