@@ -12,11 +12,15 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Download Dofus datasets')
 
     parser.add_argument(
+        '--all',
+        action='store_true',
+        help='Download every datasets'
+    )
+    parser.add_argument(
         '--almanax',
         action='store_true',
         help='Download from the almanax website'
     )
-
     for arg_name in BASENAME_URLS.keys():
         parser.add_argument(
             f'--{arg_name}',
@@ -25,6 +29,10 @@ if __name__ == '__main__':
         )
 
     args = parser.parse_args()
+    if args.all:
+        args.almanax = True
+        for category in BASENAME_URLS.keys():
+            args.__dict__[category] = True
 
     # Create the 'data' directory if necessary
     if not os.path.isdir('data'):

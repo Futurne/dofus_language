@@ -167,7 +167,7 @@ class EncyclopediaScrap:
             # Update the encyclopedia state
             state[category_name] += 1
             with open('data/encyclopedia_state.yaml', 'w') as state_file:
-                yaml.dump(dict(state), state_file)
+                yaml.dump(dict(state), state_file, allow_unicode=True)
 
     @staticmethod
     def get_page_number(basename_url: str, number: int) -> str:
