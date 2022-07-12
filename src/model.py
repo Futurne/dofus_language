@@ -14,8 +14,9 @@ def load_model(model_name: str) -> GPT2LMHeadModel:
     """
     assert model_name in accepted_models, f"Unknown model, please select one from {' '.join(accepted_models)}"
     model = GPT2LMHeadModel.from_pretrained(model_name)
-    model.requires_grad_(False)
-    model.lm_head.requires_grad_(True)
+    model.requires_grad_(True)
+    # model.requires_grad_(False)
+    # model.lm_head.requires_grad_(True)
     return model
 
 def generate(model: GPT2LMHeadModel, tokenizer: GPT2Tokenizer, beggining: str, device: str) -> list[str]:

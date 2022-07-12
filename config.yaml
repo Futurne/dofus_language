@@ -1,9 +1,9 @@
-group_wb: Test
+group_wb: GPT2 128M
 
 # Training config
 beggining_sample: Les Dofus sont à votre portée
-n_epochs: 20
-batch_size: 16
+n_epochs: 5
+batch_size: 32
 lr: 1.0e-4
 reg_weight: 1.0e-2
 
